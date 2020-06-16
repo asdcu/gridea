@@ -11,12 +11,17 @@ module.exports = {
         import: [
           resolve('src/assets/styles/var.less'),
         ],
+        modifyVars: {
+          'btn-height-base': '30px',
+          'input-height-base': '30px',
+        },
         javascriptEnabled: true,
       },
     },
   },
   pluginOptions: {
     electronBuilder: {
+      nodeIntegration: true,
       builderOptions: {
         productName: 'Gridea',
         win: {
@@ -36,6 +41,17 @@ module.exports = {
         },
         linux: {
           icon: './public/app-icons/gridea.png',
+          target: [
+            {
+              target: 'AppImage',
+            },
+            {
+              target: 'deb',
+            },
+            {
+              target: 'snap',
+            },
+          ],
         },
         asar: false,
         nsis: {
@@ -46,7 +62,11 @@ module.exports = {
           createStartMenuShortcut: true, // 创建开始菜单图标
           shortcutName: 'Gridea', // 图标名称
         },
+        publish: ['github'],
       },
+      // mainProcessWatch: [
+      //   'src/server/**/*',
+      // ],
     },
   },
 }

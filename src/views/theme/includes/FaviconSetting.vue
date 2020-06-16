@@ -15,18 +15,29 @@
         <div class="ant-upload-text">Upload</div>
       </div>
     </a-upload>
-    <a-alert class="file-name" v-if="file" :message="file && file.path" type="info" />
-    <a-button type="primary" @click="submit">{{ $t('save') }}</a-button>
+    <div class="tip-text" v-if="file">
+      {{ file.path }}
+    </div>
+    <footer-box>
+      <div class="flex justify-end">
+        <a-button type="primary" @click="submit">{{ $t('save') }}</a-button>
+      </div>
+    </footer-box>
   </div>
 </template>
 
 <script lang="ts">
-import { ipcRenderer, Event } from 'electron'
+import { ipcRenderer, IpcRendererEvent } from 'electron'
 import { Vue, Component } from 'vue-property-decorator'
 import { State } from 'vuex-class'
 import * as path from 'path'
+import FooterBox from '../../../components/FooterBox/Index.vue'
 
-@Component
+@Component({
+  components: {
+    FooterBox,
+  },
+})
 export default class FaviconSetting extends Vue {
   @State('site') site!: any
 
@@ -35,7 +46,7 @@ export default class FaviconSetting extends Vue {
   faviconPath = ''
 
   mounted() {
-    this.faviconPath = path.join('file://', this.site.appDir, 'output', `favicon.ico?a=${Math.random()}`)
+    this.faviconPath = path.join('file://', this.site.appDir, `favicon.ico?a=${Math.random()}`)
   }
 
   beforeUpload(file: any) {
@@ -58,10 +69,10 @@ export default class FaviconSetting extends Vue {
     }
     console.log('click favicon upload', this.file)
     ipcRenderer.send('favicon-upload', this.file.path)
-    ipcRenderer.once('favicon-uploaded', (event: Event, result: any) => {
+    ipcRenderer.once('favicon-uploaded', (event: IpcRendererEvent, result: any) => {
       this.file = null
       this.$bus.$emit('site-reload')
-      this.faviconPath = path.join('file://', this.site.appDir, 'output', `favicon.ico?a=${Math.random()}`)
+      this.faviconPath = path.join('file://', this.site.appDir, `favicon.ico?a=${Math.random()}`)
       this.$message.success(this.$t('faviconSettingSuccess'))
     })
   }

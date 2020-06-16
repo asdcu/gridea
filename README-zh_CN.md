@@ -49,7 +49,7 @@
 
 📋  你可以自定义菜单，甚至可以创建外部链接菜单  
 
-💻  你可以在 **𝖶𝗂𝗇𝖽𝗈𝗐𝗌** 或 **𝖬𝖺𝖼𝖮𝖲** 设备上使用此客户端  
+💻  你可以在 **𝖶𝗂𝗇𝖽𝗈𝗐𝗌** 或 **𝖬𝖺𝖼𝖮𝖲** 或 **Linux** 设备上使用此客户端  
 
 🌎  你可以使用 **𝖦𝗂𝗍𝗁𝗎𝖻 𝖯𝖺𝗀𝖾𝗌** 或 **Coding Pages** 向世界展示，未来将支持更多平台  
 
@@ -81,7 +81,7 @@ $ yarn electron:build
 ```
 
 ## 联系
-[Telegram 频道](https://t.me/joinchat/AAAAAEj82_lma0Y1wmyqUQ) | [Telegram 群组](https://t.me/joinchat/IDY0ahRqb8NPodv95BNpBg)  | QQ 群: 970332209 | 作者推特: @EryouHao
+[Telegram 频道](https://t.me/joinchat/AAAAAEj82_lma0Y1wmyqUQ) | [Telegram 群组](https://t.me/joinchat/IDY0ahRqb8NPodv95BNpBg)  | QQ 1 群: 970332209（已满）| QQ 2 群: 923131213 | 作者推特: @EryouHao
 
 ## 示例截图
 <div align="center">

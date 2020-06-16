@@ -1,31 +1,40 @@
-'use strict'
-
 import {
-  app, protocol, BrowserWindow, ipcMain, Menu, shell,
+  app, protocol, BrowserWindow, Menu, shell,
 } from 'electron'
 import {
   createProtocol,
 } from 'vue-cli-plugin-electron-builder/lib'
+import { autoUpdater } from 'electron-updater'
+import { init } from '@sentry/electron/dist/main'
 import App from './server/app'
+import messages from './assets/locales-menu'
+import initServer from './server'
+
+init({ dsn: 'https://6a6dacc57a6a4e27a88eb31596c152f8@sentry.io/1887150' })
 
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let win: any
+let menu: Menu
+let httpServer: any
 
 // Standard scheme must be registered before the app is ready
-protocol.registerStandardSchemes(['app'], { secure: true })
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 function createWindow() {
   // Create the browser window.
   const winOption: any = {
     width: 1200,
     height: 800,
+    minHeight: 642,
+    minWidth: 1000,
     webPreferences: {
       webSecurity: false, // FIXED: Not allowed to load local resource
+      nodeIntegration: true,
     },
     // frame: false, // 去除默认窗口栏
-    titleBarStyle: 'hidden' as ('hidden' | 'default' | 'hiddenInset' | 'customButtonsOnHover' | undefined),
+    titleBarStyle: 'hiddenInset' as ('hidden' | 'default' | 'hiddenInset' | 'customButtonsOnHover' | undefined),
   }
 
   if (process.platform !== 'darwin') {
@@ -43,36 +52,47 @@ function createWindow() {
     createProtocol('app')
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
+    autoUpdater.checkForUpdatesAndNotify()
   }
 
   win.on('closed', () => {
     win = null
   })
 
+  const locale: string = app.getLocale() || 'zh-CN'
+  const menuLabels = messages[locale] || messages['zh-CN']
   // menu
   const template: any = [
     {
-      label: 'Edit',
+      label: menuLabels.edit,
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        {
+          label: menuLabels.save,
+          accelerator: 'CmdOrCtrl+S',
+          click: () => {
+            win.webContents.send('click-menu-save')
+          },
+        },
         { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'pasteandmatchstyle' },
-        { role: 'delete' },
-        { role: 'selectall' },
-        { role: 'toggledevtools' },
+        { role: 'undo', label: menuLabels.undo },
+        { role: 'redo', label: menuLabels.redo },
         { type: 'separator' },
-        { role: 'quit', label: 'Quit Gridea' },
+        { role: 'cut', label: menuLabels.cut },
+        { role: 'copy', label: menuLabels.copy },
+        { role: 'paste', label: menuLabels.paste },
+        { role: 'delete', label: menuLabels.delete },
+        { role: 'selectall', label: menuLabels.selectall },
+        { role: 'toggledevtools', label: menuLabels.toggledevtools },
+        { type: 'separator' },
+        { role: 'close', label: menuLabels.close },
+        { role: 'quit', label: menuLabels.quit },
       ],
     },
     {
       role: 'windowMenu',
     },
     {
-      role: 'help',
+      role: menuLabels.help,
       submenu: [
         {
           label: 'Learn More',
@@ -82,13 +102,17 @@ function createWindow() {
     },
   ]
 
-  const menu = Menu.buildFromTemplate(template)
+  menu = Menu.buildFromTemplate(template)
   Menu.setApplicationMenu(menu)
+
+  const s = initServer()
+  httpServer = s.server
 
   const setting = {
     mainWindow: win,
     app,
     baseDir: __dirname,
+    previewServer: s.app,
   }
 
   // Init app
@@ -98,6 +122,7 @@ function createWindow() {
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
+  httpServer && httpServer.close()
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {

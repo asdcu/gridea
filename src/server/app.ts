@@ -1,6 +1,7 @@
 import { BrowserWindow, app } from 'electron'
 import * as fse from 'fs-extra'
 import * as path from 'path'
+import express from 'express'
 import EventClasses from './events/index'
 import Posts from './posts'
 import Tags from './tags'
@@ -8,8 +9,12 @@ import Menus from './menus'
 import Theme from './theme'
 import Renderer from './renderer'
 import Setting from './setting'
+import Deploy from './deploy'
 
 import { IApplicationDb, IApplicationSetting } from './interfaces/application'
+import {
+  DEFAULT_POST_PAGE_SIZE, DEFAULT_ARCHIVES_PAGE_SIZE, DEFAULT_FEED_COUNT, DEFAULT_ARCHIVES_PATH, DEFAULT_POST_PATH, DEFAULT_TAG_PATH,
+} from '../helpers/constants'
 // eslint-disable-next-line
 declare const __static: string
 
@@ -22,6 +27,8 @@ export default class App {
 
   appDir: string
 
+  previewServer: any
+
   db: IApplicationDb
 
   constructor(setting: IApplicationSetting) {
@@ -29,6 +36,7 @@ export default class App {
     this.app = setting.app
     this.baseDir = setting.baseDir
     this.appDir = path.join(this.app.getPath('documents'), 'gridea')
+    this.previewServer = setting.previewServer
 
     this.db = {
       posts: [],
@@ -36,8 +44,8 @@ export default class App {
       menus: [],
       themeConfig: {
         themeName: '',
-        postPageSize: 10,
-        archivesPageSize: 50,
+        postPageSize: DEFAULT_POST_PAGE_SIZE,
+        archivesPageSize: DEFAULT_ARCHIVES_PAGE_SIZE,
         siteName: '',
         siteDescription: '',
         footerInfo: 'Powered by Gridea',
@@ -47,19 +55,29 @@ export default class App {
         tagUrlFormat: 'SLUG',
         dateFormat: 'YYYY-MM-DD',
         feedFullText: true,
-        feedCount: 10,
+        feedCount: DEFAULT_FEED_COUNT,
+        archivesPath: DEFAULT_ARCHIVES_PATH,
+        postPath: DEFAULT_POST_PATH,
+        tagPath: DEFAULT_TAG_PATH,
       },
       themeCustomConfig: {},
+      currentThemeConfig: [],
       themes: [],
       setting: {
-        platform: '',
+        platform: 'github',
         domain: '',
         repository: '',
         branch: '',
         username: '',
         email: '',
+        tokenUsername: '',
         token: '',
         cname: '',
+        port: '22',
+        server: '',
+        password: '',
+        privateKey: '',
+        remotePath: '',
       },
       commentSetting: {
         showComment: false,
@@ -104,22 +122,26 @@ export default class App {
     const setting = await settingInstance.getSetting()
     const commentSetting = await settingInstance.getCommentSetting()
 
+    const deployInstance = new Deploy(this)
+
     this.db = {
       posts,
       tags,
       menus,
-      themeConfig,
+      themeConfig: Object.assign(this.db.themeConfig, themeConfig),
       themeCustomConfig,
+      currentThemeConfig,
       themes,
       setting,
       commentSetting: commentSetting || this.db.commentSetting,
     }
-
+    this.updateStaticServer()
     this.initEvents()
     return {
       ...this.db,
       currentThemeConfig,
       appDir: this.appDir,
+      mainWindow: this.mainWindow,
     }
   }
 
@@ -135,9 +157,10 @@ export default class App {
       const appConfigPath = path.join(appConfigFolder, 'config.json')
       const jsonString = `{"sourceFolder": "${sourceFolderPath || this.appDir}"}`
 
-      await fse.writeFileSync(appConfigPath, jsonString)
-      const appConfig = await fse.readJsonSync(appConfigPath)
+      fse.writeFileSync(appConfigPath, jsonString)
+      const appConfig = fse.readJsonSync(appConfigPath)
       this.appDir = appConfig.sourceFolder
+      this.updateStaticServer()
 
       this.checkDir()
 
@@ -164,25 +187,25 @@ export default class App {
       // if exist `.hve-notes` config folder, change folder name to `.gridea`
       try {
         if (!fse.pathExistsSync(appConfigFolder) && fse.pathExistsSync(appConfigFolderOld)) {
-          await fse.renameSync(appConfigFolderOld, appConfigFolder)
+          fse.renameSync(appConfigFolderOld, appConfigFolder)
         }
       } catch (e) {
         console.log('Rename Error: ', e)
       }
 
       if (!fse.pathExistsSync(appConfigFolder)) {
-        await fse.mkdirSync(appConfigFolder)
+        fse.mkdirSync(appConfigFolder)
         const jsonString = `{"sourceFolder": "${defaultAppDir}"}`
-        await fse.writeFileSync(appConfigPath, jsonString)
+        fse.writeFileSync(appConfigPath, jsonString)
       }
 
-      const appConfig = await fse.readJsonSync(appConfigPath)
+      const appConfig = fse.readJsonSync(appConfigPath)
       this.appDir = appConfig.sourceFolder
 
       // Site folder exists
       if (fse.pathExistsSync(this.appDir)) {
-        // Check if the `images`, `config`, 'output', `post-images`, 'posts', 'themes' folder exists, if it does not exist, copy it from default-files
-        ['images', 'config', 'output', 'post-images', 'posts', 'themes'].forEach((folder: string) => {
+        // Check if the `images`, `config`, 'output', `post-images`, 'posts', 'themes', 'static' folder exists, if it does not exist, copy it from default-files
+        ['images', 'config', 'output', 'post-images', 'posts', 'themes', 'static'].forEach((folder: string) => {
           const folderPath = path.join(this.appDir, folder)
           if (!fse.pathExistsSync(folderPath)) {
             fse.copySync(
@@ -198,13 +221,22 @@ export default class App {
         this.checkTheme('simple')
         this.checkTheme('paper')
 
+        // move output/favicon.ico to Gridea/favicon.ico
+        const outputFavicon = path.join(this.appDir, 'output', 'favicon.ico')
+        const sourceFavicon = path.join(this.appDir, 'favicon.ico')
+        const existFaviconOutput = fse.pathExistsSync(outputFavicon)
+        const existFaviconSource = fse.pathExistsSync(sourceFavicon)
+        if (existFaviconOutput && !existFaviconSource) {
+          fse.moveSync(outputFavicon, sourceFavicon)
+        }
+
         return
       }
 
       // Site folder not exists
       this.appDir = defaultAppDir
       const jsonString = `{"sourceFolder": "${defaultAppDir}"}`
-      await fse.writeFileSync(appConfigPath, jsonString)
+      fse.writeFileSync(appConfigPath, jsonString)
       fse.mkdirSync(this.appDir)
 
       fse.copySync(
@@ -231,6 +263,22 @@ export default class App {
     }
   }
 
+  private updateStaticServer(): void {
+    function removeMiddleware(route: any, i: number, routes: any) {
+      if (route.handle.name === 'serveStatic') {
+        routes.splice(i, 1)
+        console.log('Preview server: Removed old static route')
+      }
+    }
+    const routers = this.previewServer._router // eslint-disable-line no-underscore-dangle
+    if (routers) {
+      const routesStack = routers.stack
+      routesStack.forEach(removeMiddleware)
+    }
+    this.previewServer.use(express.static(`${this.appDir}/output`))
+    console.log(`Preview server: Static dir change to ${this.appDir}/output`)
+  }
+
   private initEvents(): void {
     const {
       SiteEvents,
@@ -240,6 +288,7 @@ export default class App {
       ThemeEvents,
       RendererEvents,
       SettingEvents,
+      DeployEvents,
     } = EventClasses
 
     const site = new SiteEvents(this)
@@ -249,5 +298,6 @@ export default class App {
     const theme = new ThemeEvents(this)
     const renderer = new RendererEvents(this)
     const setting = new SettingEvents(this)
+    const deploy = new DeployEvents(this)
   }
 }

@@ -12,4 +12,7 @@ export interface ITheme {
   dateFormat: string
   feedFullText: boolean
   feedCount: number
+  archivesPath: string
+  postPath: string
+  tagPath: string
 }

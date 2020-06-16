@@ -5,12 +5,20 @@
 </template>
 
 <script lang="ts">
+import { shell } from 'electron'
 import Vue from 'vue'
 import Component from 'vue-class-component'
 
 @Component
 export default class App extends Vue {
-
+  mounted() {
+    document.addEventListener('click', (event: any) => {
+      if (event.target.tagName === 'A' && event.target.href.startsWith('http')) {
+        event.preventDefault()
+        shell.openExternal(event.target.href)
+      }
+    })
+  }
 }
 </script>
 
@@ -24,12 +32,12 @@ export default class App extends Vue {
   /* Global CSS */
   body {
     background: #fff;
-    color: #434343;
+    color: #555;
   }
 
   ::-webkit-scrollbar{
-    width: 0px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
     border-radius: 4px;
     background-color: #fff;
 
@@ -69,6 +77,6 @@ export default class App extends Vue {
   }
 
   .application {
-    font-family: system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Droid Sans,Helvetica Neue,Fira Sans,sans-serif!important;
+    font-family: PingFang SC,-apple-system,SF UI Text,Lucida Grande,STheiti,Microsoft YaHei,sans-serif !important;
   }
 </style>

@@ -1,12 +1,19 @@
 export interface ISetting {
-  platform?: string,
+  platform: 'github' | 'coding' | 'sftp'
   domain: string
   repository: string
   branch: string
   username: string
   email: string
+  tokenUsername: string
   token: string
   cname: string
+  port: string
+  server: string
+  password: string
+  privateKey: string
+  remotePath: string
+  [index: string]: string
 }
 
 export interface IDisqusSetting {

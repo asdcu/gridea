@@ -1,6 +1,6 @@
 {
   "name": "Notes",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "author": "EryouHao",
   "repository": "https://github.com/getgridea/gridea-theme-notes",
   "customConfig": [
@@ -19,6 +19,54 @@
       "value": "16px",
       "type": "input",
       "note": "px 或 rem（如 16px 或 1rem）"
+    },
+    {
+      "name": "titleAlign",
+      "label": "标题对齐",
+      "group": "布局",
+      "value": "center",
+      "type": "radio",
+      "options": [
+        {
+          "label": "居中对齐",
+          "value": "center"
+        },
+        {
+          "label": "左对齐",
+          "value": "left"
+        },
+        {
+          "label": "右对齐",
+          "value": "right"
+        }
+      ],
+      "note": "包含标题及日期、标签等信息部分"
+    },
+    {
+      "name": "siteFont",
+      "label": "网站字体",
+      "group": "布局",
+      "value": "-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Droid Sans Fallback','Microsoft YaHei',sans-serif",
+      "type": "select",
+      "options": [
+        {
+          "label": "-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Droid Sans Fallback','Microsoft YaHei',sans-serif",
+          "value": "-apple-system,BlinkMacSystemFont,'Helvetica Neue','PingFang SC','Hiragino Sans GB','Droid Sans Fallback','Microsoft YaHei',sans-serif"
+        },
+        {
+          "label": "Georgia, serif",
+          "value": "Georgia, serif"
+        }
+      ],
+      "note": ""
+    },
+    {
+      "name": "openPostToc",
+      "label": "是否显示文章目录",
+      "group": "布局",
+      "value": true,
+      "type": "switch",
+      "note": "仅在宽屏时生效"
     },
     {
       "name": "contentBgColor",
@@ -42,7 +90,7 @@
       "name": "textColor",
       "label": "文字颜色",
       "group": "颜色",
-      "value": "#333333",
+      "value": "rgba(0, 0, 0, 0.86)",
       "type": "input",
       "card": "color",
       "note": "颜色字符串:（如：#EEEEEE、rgba(255, 255, 255, 0.9)）"
@@ -51,7 +99,7 @@
       "name": "linkColor",
       "label": "链接颜色",
       "group": "颜色",
-      "value": "#333333",
+      "value": "rgba(0,0,0,.98)",
       "type": "input",
       "card": "color",
       "note": "颜色字符串:（如：#EEEEEE、rgba(255, 255, 255, 0.9)）"
@@ -120,6 +168,13 @@
       "value": "",
       "type": "input",
       "note": "UA-xxxxxxxxx-x"
+    },
+    {
+      "name": "metaDescription",
+      "label": "Meta Description",
+      "group": "SEO",
+      "value": "",
+      "type": "input"
     }
   ]
 }

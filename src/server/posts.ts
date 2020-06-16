@@ -4,12 +4,11 @@ import * as path from 'path'
 import matter from 'gray-matter'
 import moment from 'moment'
 import Bluebird from 'bluebird'
+import junk from 'junk'
 import Model from './model'
 import { IPost, IPostDb } from './interfaces/post'
 import ContentHelper from '../helpers/content-helper'
 import { formatYamlString } from '../helpers/utils'
-// tslint:disable-next-line
-const junk = require('junk')
 
 Bluebird.promisifyAll(fs)
 
@@ -65,11 +64,12 @@ tags: [${newTagString}]
 published: ${data.published || false}
 hideInList: ${data.hideInList || false}
 feature: ${data.feature || ''}
+isTop: ${data.isTop || false}
 ---
 ${postMatter.content}`
 
           fixedResults[index] = mdStr
-          await fse.writeFileSync(`${this.postDir}/${files[index]}`, mdStr)
+          fse.writeFileSync(`${this.postDir}/${files[index]}`, mdStr)
         }
       }
     }))
@@ -122,6 +122,11 @@ ${postMatter.content}`
         item.data.hideInList = false
       }
 
+      // Articles migrated from other platforms or old articles do not have `isTop` fields
+      if (item.data.isTop === undefined) {
+        item.data.isTop = false
+      }
+
       list.push(item)
     })
 
@@ -133,7 +138,6 @@ ${postMatter.content}`
 
   async list() {
     await this.savePosts()
-    // await this.$posts.defaults({ posts: [] }).write()
     const posts = await this.$posts.get('posts').value()
     const helper = new ContentHelper()
 
@@ -167,6 +171,7 @@ tags: [${post.tags.join(',')}]
 published: ${post.published}
 hideInList: ${post.hideInList}
 feature: ${post.featureImage.name ? `/post-images/${post.fileName}.${extendName}` : post.featureImagePath}
+isTop: ${post.isTop}
 ---
 ${content}`
 
@@ -176,11 +181,11 @@ ${content}`
         const filePath = `${this.postImageDir}/${post.fileName}.${extendName}`
 
         if (post.featureImage.path !== filePath) {
-          await fse.copySync(post.featureImage.path, filePath)
+          fse.copySync(post.featureImage.path, filePath)
 
           // Clean the old file
           if (post.featureImage.path.includes(this.postImageDir)) {
-            await fse.removeSync(post.featureImage.path)
+            fse.removeSync(post.featureImage.path)
           }
         }
       }
@@ -190,7 +195,7 @@ ${content}`
 
       // Clean the old file
       if (post.deleteFileName) {
-        await fse.removeSync(`${this.postDir}/${post.deleteFileName}.md`)
+        fse.removeSync(`${this.postDir}/${post.deleteFileName}.md`)
       }
     } catch (e) {
       console.error('ERROR: ', e)
@@ -201,11 +206,11 @@ ${content}`
   async deletePost(post: IPostDb) {
     try {
       const postUrl = `${this.postDir}/${post.fileName}.md`
-      await fse.removeSync(postUrl)
+      fse.removeSync(postUrl)
 
       // Clean feature image
       if (post.data.feature) {
-        await fse.removeSync(post.data.feature.replace('file://', ''))
+        fse.removeSync(post.data.feature.replace('file://', ''))
       }
 
       // Clean post content image
@@ -217,7 +222,7 @@ ${content}`
           return item.substring(index + 1, item.length - 1)
         })
         postImagePaths.forEach(async (filePath: string) => {
-          await fse.removeSync(filePath.replace('file://', ''))
+          fse.removeSync(filePath.replace('file://', ''))
         })
       }
       return true

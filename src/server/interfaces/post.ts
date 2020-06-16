@@ -8,6 +8,7 @@ export interface IPost {
   content: string
   published: boolean
   hideInList: boolean
+  isTop: boolean
   featureImage: {
     name?: string,
     path?: string,
@@ -23,6 +24,7 @@ export interface IPostData {
   date: string
   published: boolean
   hideInList: boolean
+  isTop: boolean
   tags?: []
   feature: string
 }
@@ -41,6 +43,17 @@ export interface ITagRenderData extends ITag {
   link: string
 }
 
+export interface ISiteTagsData extends ITagRenderData {
+  count: number
+}
+
+export interface IStats {
+  text: string
+  minutes: number
+  time: number
+  words: number
+}
+
 export interface IPostRenderData {
   content: string
   fileName: string
@@ -52,5 +65,10 @@ export interface IPostRenderData {
   feature: string
   link: string
   hideInList: boolean
-  toc?: any,
+  isTop: boolean
+  toc?: any
+  stats: IStats
+  nextPost?: IPostRenderData
+  prevPost?: IPostRenderData
+  description: string
 }
